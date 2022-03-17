@@ -8,16 +8,15 @@ part of 'note_database.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps, unnecessary_this
 class Note extends DataClass implements Insertable<Note> {
-  final int id;
+  final int? id;
   final String title;
   final String desc;
-  Note({required this.id, required this.title, required this.desc});
+  Note({this.id, required this.title, required this.desc});
   factory Note.fromData(Map<String, dynamic> data, GeneratedDatabase db,
       {String? prefix}) {
     final effectivePrefix = prefix ?? '';
     return Note(
-      id: const IntType()
-          .mapFromDatabaseResponse(data['${effectivePrefix}id'])!,
+      id: const IntType().mapFromDatabaseResponse(data['${effectivePrefix}id']),
       title: const StringType()
           .mapFromDatabaseResponse(data['${effectivePrefix}title'])!,
       desc: const StringType()
@@ -27,7 +26,9 @@ class Note extends DataClass implements Insertable<Note> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || id != null) {
+      map['id'] = Variable<int?>(id);
+    }
     map['title'] = Variable<String>(title);
     map['desc'] = Variable<String>(desc);
     return map;
@@ -35,7 +36,7 @@ class Note extends DataClass implements Insertable<Note> {
 
   NotesCompanion toCompanion(bool nullToAbsent) {
     return NotesCompanion(
-      id: Value(id),
+      id: id == null && nullToAbsent ? const Value.absent() : Value(id),
       title: Value(title),
       desc: Value(desc),
     );
@@ -45,7 +46,7 @@ class Note extends DataClass implements Insertable<Note> {
       {ValueSerializer? serializer}) {
     serializer ??= moorRuntimeOptions.defaultSerializer;
     return Note(
-      id: serializer.fromJson<int>(json['id']),
+      id: serializer.fromJson<int?>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       desc: serializer.fromJson<String>(json['desc']),
     );
@@ -54,7 +55,7 @@ class Note extends DataClass implements Insertable<Note> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= moorRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
+      'id': serializer.toJson<int?>(id),
       'title': serializer.toJson<String>(title),
       'desc': serializer.toJson<String>(desc),
     };
@@ -87,7 +88,7 @@ class Note extends DataClass implements Insertable<Note> {
 }
 
 class NotesCompanion extends UpdateCompanion<Note> {
-  final Value<int> id;
+  final Value<int?> id;
   final Value<String> title;
   final Value<String> desc;
   const NotesCompanion({
@@ -102,7 +103,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
   })  : title = Value(title),
         desc = Value(desc);
   static Insertable<Note> custom({
-    Expression<int>? id,
+    Expression<int?>? id,
     Expression<String>? title,
     Expression<String>? desc,
   }) {
@@ -114,7 +115,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
   }
 
   NotesCompanion copyWith(
-      {Value<int>? id, Value<String>? title, Value<String>? desc}) {
+      {Value<int?>? id, Value<String>? title, Value<String>? desc}) {
     return NotesCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -126,7 +127,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<int?>(id.value);
     }
     if (title.present) {
       map['title'] = Variable<String>(title.value);
@@ -156,7 +157,7 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
   final VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<int?> id = GeneratedColumn<int?>(
-      'id', aliasedName, false,
+      'id', aliasedName, true,
       type: const IntType(),
       requiredDuringInsert: false,
       defaultConstraints: 'PRIMARY KEY AUTOINCREMENT');
